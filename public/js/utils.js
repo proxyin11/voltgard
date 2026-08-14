@@ -20,12 +20,19 @@ const API = {
       return { ok: true, blob: await response.blob() };
     }
     
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || 'Request failed');
+    const contentType = response.headers.get('content-type') || '';
+    let data;
+    if (contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      const text = await response.text();
+      throw new Error(text || `Server error (${response.status})`);
     }
-    
+
+    if (!response.ok) {
+      throw new Error(data?.error || 'Request failed');
+    }
+
     return data;
   },
 

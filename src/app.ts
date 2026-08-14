@@ -54,16 +54,14 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 // Swagger Documentation Route
 app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// API v1 Routes
+// API v1 Routes & legacy compatibility routes
 app.use('/api/v1', v1Routes);
-
-// Fallback legacy API compatibility routes
-app.use('/api/auth', v1Routes);
+app.use('/api', v1Routes);
 
 // SPA fallback
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
-  res.sendFile(path.join(__dirname, '..', 'index.html'));
+  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
 // Global Error Handler
