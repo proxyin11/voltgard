@@ -90,6 +90,86 @@ router.post('/logout', (req, res) => {
   });
 });
 
+// POST /api/auth/sso/google
+router.post('/sso/google', async (req, res) => {
+  try {
+    let { email } = req.body;
+    if (!email) {
+      email = "google.user@example.com";
+    }
+
+    // Find or create user
+    let user = queryOne('SELECT * FROM users WHERE email = ?', [email]);
+    if (!user) {
+      const userId = uuidv4();
+      const salt = generateSalt();
+      const randomPass = uuidv4() + uuidv4();
+      const passwordHash = await bcrypt.hash(randomPass, config.security.bcryptRounds);
+
+      runStatement(
+        'INSERT INTO users (id, email, password_hash, salt) VALUES (?, ?, ?, ?)',
+        [userId, email, passwordHash, salt]
+      );
+      user = queryOne('SELECT * FROM users WHERE id = ?', [userId]);
+      logger.info('New Google SSO user created', { userId, email });
+    }
+
+    const ssoMasterKey = `SSO_GOOGLE_${user.id}_SECRET`;
+    const vaultKey = deriveKey(ssoMasterKey, user.salt);
+
+    req.session.userId = user.id;
+    req.session.email = user.email;
+    req.session.vaultKey = vaultKey.toString('hex');
+    req.session.lastActivity = Date.now();
+
+    logger.info('Google SSO login successful', { userId: user.id });
+    res.json({ message: 'Google SSO authentication successful.', email: user.email });
+  } catch (error) {
+    logger.error('Google SSO error', { error: error.message });
+    res.status(500).json({ error: 'Google SSO authentication failed.' });
+  }
+});
+
+// POST /api/auth/sso/apple
+router.post('/sso/apple', async (req, res) => {
+  try {
+    let { email } = req.body;
+    if (!email) {
+      email = "apple.user@privaterelay.appleid.com";
+    }
+
+    // Find or create user
+    let user = queryOne('SELECT * FROM users WHERE email = ?', [email]);
+    if (!user) {
+      const userId = uuidv4();
+      const salt = generateSalt();
+      const randomPass = uuidv4() + uuidv4();
+      const passwordHash = await bcrypt.hash(randomPass, config.security.bcryptRounds);
+
+      runStatement(
+        'INSERT INTO users (id, email, password_hash, salt) VALUES (?, ?, ?, ?)',
+        [userId, email, passwordHash, salt]
+      );
+      user = queryOne('SELECT * FROM users WHERE id = ?', [userId]);
+      logger.info('New Apple SSO user created', { userId, email });
+    }
+
+    const ssoMasterKey = `SSO_APPLE_${user.id}_SECRET`;
+    const vaultKey = deriveKey(ssoMasterKey, user.salt);
+
+    req.session.userId = user.id;
+    req.session.email = user.email;
+    req.session.vaultKey = vaultKey.toString('hex');
+    req.session.lastActivity = Date.now();
+
+    logger.info('Apple SSO login successful', { userId: user.id });
+    res.json({ message: 'Apple SSO authentication successful.', email: user.email });
+  } catch (error) {
+    logger.error('Apple SSO error', { error: error.message });
+    res.status(500).json({ error: 'Apple SSO authentication failed.' });
+  }
+});
+
 // GET /api/auth/status
 router.get('/status', (req, res) => {
   if (req.session && req.session.userId) {

@@ -112,6 +112,28 @@ describe('Auth API', () => {
       expect(status.body.authenticated).toBe(false);
     });
   });
+
+  describe('SSO Endpoints', () => {
+    test('POST /api/auth/sso/google authenticates Google user', async () => {
+      const res = await request(app)
+        .post('/api/auth/sso/google')
+        .send({ email: 'sso.google@example.com' })
+        .expect(200);
+
+      expect(res.body.message).toContain('Google SSO authentication successful');
+      expect(res.body.email).toBe('sso.google@example.com');
+    });
+
+    test('POST /api/auth/sso/apple authenticates Apple user', async () => {
+      const res = await request(app)
+        .post('/api/auth/sso/apple')
+        .send({ email: 'sso.apple@privaterelay.appleid.com' })
+        .expect(200);
+
+      expect(res.body.message).toContain('Apple SSO authentication successful');
+      expect(res.body.email).toBe('sso.apple@privaterelay.appleid.com');
+    });
+  });
 });
 
 describe('Protected Routes (without auth)', () => {

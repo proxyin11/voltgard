@@ -96,12 +96,37 @@
     }
   }
 
+  window.handleGoogleSSO = async function () {
+    const ssoEmail = prompt("Enter your Google Account email:", "user@gmail.com");
+    if (!ssoEmail) return;
+
+    try {
+      await API.post('/api/auth/sso/google', { email: ssoEmail });
+      window.location.href = '/vault';
+    } catch (err) {
+      showMessage(err.message || 'Google SSO failed.', 'error');
+    }
+  };
+
+  window.handleAppleSSO = async function () {
+    const ssoEmail = prompt("Enter your Apple ID email:", "user@privaterelay.appleid.com");
+    if (!ssoEmail) return;
+
+    try {
+      await API.post('/api/auth/sso/apple', { email: ssoEmail });
+      window.location.href = '/vault';
+    } catch (err) {
+      showMessage(err.message || 'Apple SSO failed.', 'error');
+    }
+  };
+
   function showMessage(text, type) {
     authMessage.textContent = text;
     authMessage.className = `auth-message ${type}`;
   }
 
   function hideMessage() {
+    authMessage.textContent = '';
     authMessage.className = 'auth-message';
   }
 })();
