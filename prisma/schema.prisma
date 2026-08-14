@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                    String       @id @default(uuid())
+  email                 String       @unique
+  passwordHash          String?
+  salt                  String?
+  ssoProvider           String?
+  ssoSubject            String?
+  encryptedVaultKeyBlob String?
+  vaultKeyIv            String?
+  vaultKeySalt          String?
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+  credentials           Credential[]
+  categories            Category[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  sid       String   @unique
+  data      String
+  expiresAt DateTime
+}
+
+model Category {
+  id          String       @id @default(uuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  color       String?
+  createdAt   DateTime     @default(now())
+  credentials Credential[]
+}
+
+model Credential {
+  id                String    @id @default(uuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId        String?
+  category          Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  siteName          String
+  url               String?
+  username          String?
+  encryptedPassword String
+  iv                String
+  notes             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}

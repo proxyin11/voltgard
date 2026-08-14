@@ -1,0 +1,56 @@
+name: VaultGuard Enterprise CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: vaultadmin
+          POSTGRES_PASSWORD: VaultSecret2026!
+          POSTGRES_DB: vaultguard_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: TypeCheck TypeScript
+        run: npx tsc --noEmit
+
+      - name: Run Vitest Unit Tests
+        run: npm test
+
+      - name: Security Audit
+        run: npm audit --audit-level=high || true
+
+      - name: Build Production Assets
+        run: npm run build:ui
